@@ -1,0 +1,24 @@
+language: generic
+sudo: required
+services:
+    - docker
+
+berfore_install:
+    - docker build -t federicoklappenbach/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+    - docker run -e CI=true federicoklappenbach/react-test npm run test -- --coverage
+
+after_success:
+    - docker build -t federicoklappenbach/multi-client ./client
+    - docker build -t federicoklappenbach/multi-nginx ./nginx
+    - docker build -t federicoklappenbach/multi-server ./server
+    - docker build -t federicoklappenbach/multi-worker ./worker
+
+    #Login to docker hub
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+    #Push to docker hub
+    - docker push federicoklappenbach/multi-client
+    - docker push federicoklappenbach/multi-nginx
+    - docker push federicoklappenbach/multi-server
+    - docker push federicoklappenbach/multi-worker
